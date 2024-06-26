@@ -12,7 +12,9 @@ Code Developers: Dr Chris Brown, Max Campbell
 
 It is recommended you look up the peer-reviewed study by the same title and cite that. 
 
-Brown, Campbell, 2024. R code to support the manuscript: "Speeding up the recovery of coastal habitats through management interventions that address constraints on dispersal and recruitment"
+Brown, Campbell, 2024. R code to support the manuscript: "Speeding up the recovery of coastal habitats through management interventions that address constraints on dispersal and recruitment" Zenodo. DOI: 10.5281/zenodo.12541372
+
+[![DOI](https://zenodo.org/badge/712717461.svg)](https://zenodo.org/doi/10.5281/zenodo.12541371)
 
 
 ## How to navigate the code
