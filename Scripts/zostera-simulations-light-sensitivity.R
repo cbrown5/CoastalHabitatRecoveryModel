@@ -1,7 +1,7 @@
 
 #################################################################################################
 #
-# Sensitivity analysis for STRESSNET MODEL - Biomass model with connectivity layer
+# Sensitivity analysis - Biomass model with connectivity layer
 #
 # Zostera
 #
@@ -28,10 +28,9 @@ source("Functions/Seeding_functions.R")
 source("Scripts/zostera_params.R")
 
 # Specify experiment name HERE (and stress levels)
-temp_stress <- 34.5
 light_stress <- 2.4
 Experiment_name <- gsub(".", "-", 
-                        sprintf("Deg1_stochastic-rec-disp_T%s_L%s", temp_stress, light_stress),
+                        sprintf("Deg1_stochastic-rec-disp_L%s", light_stress),
                         fixed = TRUE)
 
 ######################## Set Parameters ##########################################
@@ -42,13 +41,13 @@ SR_model_list <- list()
 treatment_df <- list()
 
 # Specify how many nodes (patches)
-n_vect <- 2:11
+n_vect <- 2:10
  
 # Setup the stressor treatments
 # Choose light and temp levels plus name
 lhour <- function(x) x*1000/24 # Function to convert mol per day to mmol per hour
-temp_lev <- c( "normal" = 30.3, "high" =  temp_stress) 
-light_lev <- c("normal" = lhour(5.2), "low" = lhour(light_stress))
+light_lev <- lhour(c(1.3, 2.6, 5.2))#lhour(seq(1, 5.2, by = 0.1))
+temp_lev <- c( "normal" = 30.3) 
 templight <- expand.grid( T. = temp_lev, I. = light_lev)
 
 # For each number of nodes
@@ -80,8 +79,8 @@ for (i in seq_along(n_vect)){
     
     # Update the parameters
     temp_params <- this_param_set
-    temp_params[["T."]] <- as.vector(temp_stressors$T.)
-    temp_params[["I."]] <- as.vector(temp_stressors$I.)
+    temp_params[["I."]] <- as.vector(light_lev[j])
+    temp_params[["T."]] <- temp_lev
     
     # Start source patches at equilibrium
     temp_params[["B_init"]] <- Find_B_star(params = temp_params, keep_perturbed = TRUE)
@@ -98,14 +97,7 @@ for (i in seq_along(n_vect)){
 
 # Get the variables we need
 treatment_df <- within(treatment_df, {
-  light <- if_else( I.== light_lev[["normal"]], "normal", "low")
-  temp <- if_else(T. == temp_lev[["normal"]], "normal", "high")
-  Stressors <- case_when(light == "normal" & temp == "normal" ~ "Control", 
-                        light == "low" & temp == "normal" ~ "Low light",
-                        light == "normal" & temp == "high" ~ "High temp",
-                        light == "low" & temp == "high" ~ "Low light + high temp")
   n_sources <- n-1
-  
   # Stochastic Dispersal results
   disp_mod_lambda <- lapply(SD_model_list, FUN = 
                               function(x) x[["recovery_time"]][["lambda"]]) %>% unlist()
@@ -155,62 +147,4 @@ treatment_df <- within(treatment_df, {
 
 save(treatment_df, 
      file = "Outputs/zostera-stressors-scenarios.rda")
-
-
-# ------------ 
-# PLOTS 
-# ------------ 
-
-
-#
-# Figure 3, just two models 
-#
-
-mod2_res <- treatment_df %>% 
-  filter(Stressors == "Control")
-
-ggplot(mod2_res) + 
-  aes(x = n_sources, y = median_recovery/365, colour = model,
-      shape = model) +
-  geom_hline(yintercept = 0) +
-  theme_classic()+
-  geom_line(position = position_dodge(width = 0.6), alpha = 0.5) + 
-  geom_point(aes(shape = model), position = position_dodge(width = 0.6))  +
-  geom_linerange(mapping = aes(ymin = per25/365, ymax = per75/365), 
-                 position = position_dodge(width = 0.6), size = 1, alpha = 0.5) +
-  geom_linerange(mapping = aes(ymin = per5/365, ymax = per95/365), 
-                 position = position_dodge(width = 0.6), alpha = 0.5) +
-  scale_shape_manual(values = c(1,2)) + 
-  xlab("Number of source patches") + 
-  ylab("Recovery time (years)") + 
-  scale_x_continuous(breaks = 1:10) +
-  scale_color_manual(values = c("black", "#d41515")) + 
-  theme(axis.text = element_text(size = 11), 
-        axis.title = element_text(size = 13),
-        legend.text = element_text(size = 10), 
-        legend.position = c(0.8,0.8),
-        legend.title = element_blank()
-  )
-
-#
-# Effect of stressors
-#
-
-ggplot(treatment_df) + aes(x = n_sources, y = median_recovery/365, colour = Stressors) +
-  geom_hline(yintercept = 0) +
-  geom_point(aes(shape = Stressors), position = position_dodge(width = 0.6)) + theme_classic()+
-  geom_linerange(mapping = aes(ymin = per5/365, ymax = per95/365), 
-                 position = position_dodge(width = 0.6)) +
-  scale_shape_manual(values = c(1,2,4,5)) + 
-  facet_wrap(.~ model, nrow = 2, scales = "free_y") + xlab("Number of source patches") + 
-  scale_x_continuous(breaks = 1:10) +
-  ylab("Recovery time (years)") + 
-  theme(axis.text = element_text(size = 11), axis.title = element_text(size = 13),
-        legend.text = element_text(size = 10), legend.position = c(0.8,0.3),
-          legend.title = element_blank()
-        )
-  
-ggsave(sprintf("Shared/Figures/%s_recovery_time_vs_npatches.png", 
-               Experiment_name), width = 18, height = 15, units = "cm", dpi = 300, 
-       scale = 0.9)
 

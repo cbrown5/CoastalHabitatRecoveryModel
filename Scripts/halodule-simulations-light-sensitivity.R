@@ -1,9 +1,22 @@
 
-# Zostera analysis, sensitivity to recruitment/disp 
-# parameters
-#CJ Brown 2022-11-22
-
-#Sensitivity to lmax, nu and phi (AKA tau in the paper)
+#################################################################################################
+#
+# Sensitivity analysis for STRESSNET MODEL - Biomass model with connectivity layer
+#
+# Halodule
+#
+# ====================
+# Calculate expected recovery time and its quantiles for one perturbed patch where we 
+# vary number of source patches between 1-20. Plot recovery time vs number of
+# source patches for each 
+# stressor combo and model (facets)
+# 
+# 1-20 source nodes, 1 perturbations
+# 20 connectivity scenarios
+# Full stressor combos 
+# Analytical solutions available
+#
+################################################################################################
 
 library(tidyverse)
 
@@ -12,36 +25,30 @@ source("Functions/Conversion_functions.R")
 source("Functions/Stochastic_dispersal_model.R")
 source("Functions/Stochastic_recruitment_model.R")
 source("Functions/Seeding_functions.R")
-source("Scripts/zostera_params.R")
+source("Scripts/halodule_params.R")
 
-lhour <- function(x) x*1000/24 # Function to convert mol per day to mmol per hour
 # Specify experiment name HERE (and stress levels)
-temp_stress <- 34.5
 light_stress <- 2.4
+Experiment_name <- gsub(".", "-", 
+                        sprintf("Deg1_stochastic-rec-disp_L%s", light_stress),
+                        fixed = TRUE)
+
 ######################## Set Parameters ##########################################
+
 
 SD_model_list <- list()
 SR_model_list <- list()
 treatment_df <- list()
 
 # Specify how many nodes (patches)
-n_vect <- 2:11
+n_vect <- 2:10
  
 # Setup the stressor treatments
 # Choose light and temp levels plus name
-temp_lev <- c( "normal" = 30.3, "high" =  temp_stress) 
-light_lev <- c("normal" = lhour(5.2), "low" = lhour(light_stress))
+lhour <- function(x) x*1000/24 # Function to convert mol per day to mmol per hour
+light_lev <- lhour(c(1.3, 2.6, 5.2))#lhour(seq(1, 5.2, by = 0.1))
+temp_lev <- c( "normal" = 30.3) 
 templight <- expand.grid( T. = temp_lev, I. = light_lev)
-
-#change parameters to saturate recruitment and/or dispersal
-all_param_combos <- rbind(
-  data.frame(templight, 
-             phi = zostera_param_set$phi,
-             l_max = zostera_param_set$l_max),
-  data.frame(templight, 
-            phi = 20,
-             l_max = 0.99)
-  )
 
 # For each number of nodes
 for (i in seq_along(n_vect)){
@@ -55,7 +62,7 @@ for (i in seq_along(n_vect)){
   Q[, 1] <- 1
   Q[1,1] <- 0
 
-  this_param_set <- within(zostera_param_set, {
+  this_param_set <- within(halodule_param_set, {
     
     n <- n
     B_init <-  c(0, rep(667, n-1))
@@ -66,28 +73,22 @@ for (i in seq_along(n_vect)){
   rm(Q, n)
   
   # For each stressor treatment
-  for (j in 1:nrow(all_param_combos)){
+  for (j in 1:nrow(templight)){
     
-    this_combo <- all_param_combos[j,, drop = FALSE]
+    temp_stressors <- templight[j,, drop = FALSE]
     
     # Update the parameters
     temp_params <- this_param_set
-    temp_params[["phi"]] <- as.vector(this_combo$phi)
-    temp_params[["l_max"]] <- as.vector(this_combo$l_max)
-    temp_params[["T."]] <- as.vector(this_combo$T.)
-    temp_params[["I."]] <- as.vector(this_combo$I.)
+    temp_params[["I."]] <- as.vector(light_lev[j])
+    temp_params[["T."]] <- temp_lev
     
     # Start source patches at equilibrium
-    temp_params[["B_init"]] <- Find_B_star(params = temp_params, 
-                                           keep_perturbed = TRUE)
+    temp_params[["B_init"]] <- Find_B_star(params = temp_params, keep_perturbed = TRUE)
 
-    SD_model_list <- c(SD_model_list, 
-                       list(Stochastic_dispersal_model(temp_params)))
-    SR_model_list <- cbind(SR_model_list, 
-                           list(Stochastic_recruitment_model(temp_params)))
+    SD_model_list <- c(SD_model_list, list(Stochastic_dispersal_model(temp_params)))
+    SR_model_list <- cbind(SR_model_list, list(Stochastic_recruitment_model(temp_params)))
     
-    treatment_df <- rbind(treatment_df,
-                          within(this_combo, n <-  n_vect[[i]]))
+    treatment_df <- rbind(treatment_df, within(temp_stressors, n <-  n_vect[[i]]))
     
     
   }
@@ -96,9 +97,7 @@ for (i in seq_along(n_vect)){
 
 # Get the variables we need
 treatment_df <- within(treatment_df, {
-  
   n_sources <- n-1
-  
   # Stochastic Dispersal results
   disp_mod_lambda <- lapply(SD_model_list, FUN = 
                               function(x) x[["recovery_time"]][["lambda"]]) %>% unlist()
@@ -133,7 +132,7 @@ percentile_recovery <- function(percentile, lambda, recol_time) {
 # plot(y = v_mod_cdf(x = 0:30, lambda = treatment_df$lambda[[1]], recol_time = 16), x = 0:30, type = "l")
 
 # Compute the percentiles
-treatment_df <- within(treatment_df, {
+halo_treatment_df <- within(treatment_df, {
   
   median_recovery <- percentile_recovery(50, lambda = lambda, recol_time = recol_time)
   per5 <- percentile_recovery(5, lambda = lambda, recol_time = recol_time)
@@ -142,45 +141,10 @@ treatment_df <- within(treatment_df, {
   per75 <- percentile_recovery(75, lambda = lambda, recol_time = recol_time)
   model<- case_when(model == "rec" ~ "Stochastic recolonisation",
                     model == "disp" ~ "Stochastic dispersal")
-  species <- "zostera"
+  species <- "halodule"
   
   })
 
-
-
-
-save(treatment_df, 
-     file = "Outputs/zostera-mgmt-results.rda")
-
-
-# ------------ 
-# PLOTS 
-# ------------ 
-
-
-#
-# Figure 3, just two models 
-#
-
-# ggplot(filter(treatment_df, I. == templight$I.[1])) + 
-  ggplot(treatment_df) +
-  aes(x = n_sources, y = median_recovery/365, colour = T.,
-      shape = model, fill = I.) +
-  geom_hline(yintercept = 0) +
-  theme_classic()+
-  geom_line(position = position_dodge(width = 0.6), alpha = 0.5) + 
-  geom_point(aes(shape = model), position = position_dodge(width = 0.6))  +
-  geom_linerange(mapping = aes(ymin = per25/365, ymax = per75/365), 
-                 position = position_dodge(width = 0.6), size = 1, alpha = 0.5) +
-  geom_linerange(mapping = aes(ymin = per5/365, ymax = per95/365), 
-                 position = position_dodge(width = 0.6), alpha = 0.5) +
-  scale_shape_manual(values = c(1,2)) + 
-  xlab("Number of source patches") + 
-  ylab("Recovery time (years)") + 
-  scale_x_continuous(breaks = 1:10) +
-  facet_grid(phi ~ l_max, scales = "free") + 
-  theme(axis.text = element_text(size = 11), 
-        axis.title = element_text(size = 13),
-        legend.text = element_text(size = 10)
-  )
+save(halo_treatment_df, 
+     file = "Outputs/halodule-stressors-scenarios.rda")
 

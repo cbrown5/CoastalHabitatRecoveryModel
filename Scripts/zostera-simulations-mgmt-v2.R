@@ -1,23 +1,22 @@
 
-# Zostera analysis, sensitivity to recruitment/disp 
-# parameters
-#CJ Brown 2022-11-22
-
-#Sensitivity to lmax, nu and phi (AKA tau in the paper)
+# Zostera analysis, mgmt simulations 
+#CJ Brown 2024-02-16
 
 library(tidyverse)
+
 
 # source functions 
 source("Functions/Conversion_functions.R")
 source("Functions/Stochastic_dispersal_model.R")
 source("Functions/Stochastic_recruitment_model.R")
 source("Functions/Seeding_functions.R")
-source("Scripts/halodule_params.R")
+source("Scripts/zostera_params.R")
 
 lhour <- function(x) x*1000/24 # Function to convert mol per day to mmol per hour
 # Specify experiment name HERE (and stress levels)
 temp_stress <- 34.5
-light_stress <- 2.4
+light_stress <- seq(1, 5.1, by = 0.1)
+  # c(2.6, 1.3)
 ######################## Set Parameters ##########################################
 
 SD_model_list <- list()
@@ -29,19 +28,27 @@ n_vect <- 2:11
  
 # Setup the stressor treatments
 # Choose light and temp levels plus name
-temp_lev <- c( "normal" = 30.3, "high" =  temp_stress) 
-light_lev <- c("normal" = lhour(5.2), "low" = lhour(light_stress))
+temp_lev <- 30.3# c( "normal" = 30.3, "high" =  temp_stress) 
+light_lev <-lhour(c(5.2, light_stress)) #c("normal" = lhour(5.2), "low" = lhour(light_stress))
 templight <- expand.grid( T. = temp_lev, I. = light_lev)
 
 #change parameters to saturate recruitment and/or dispersal
 all_param_combos <- rbind(
   data.frame(templight, 
-             phi = halodule_param_set$phi,
-             l_max = halodule_param_set$l_max),
+             phi = zostera_param_set$phi,
+             l_max = zostera_param_set$l_max),
   data.frame(templight, 
+             phi = zostera_param_set$phi*1.5,
+             l_max = zostera_param_set$l_max),
+  #This represents recruit/settlement saturation (ie restoration interventions, 
+  # with type of intervention depending on which model we are looking at): 
+  data.frame(templight, 
+             #phi: biomass at which recruit probability is half Lmax (called tau in the paper)
             phi = 20,
-             l_max = 0.99)
+             l_max = 0.999)
   )
+
+
 
 # For each number of nodes
 for (i in seq_along(n_vect)){
@@ -55,7 +62,7 @@ for (i in seq_along(n_vect)){
   Q[, 1] <- 1
   Q[1,1] <- 0
 
-  this_param_set <- within(halodule_param_set, {
+  this_param_set <- within(zostera_param_set, {
     
     n <- n
     B_init <-  c(0, rep(667, n-1))
@@ -149,8 +156,8 @@ treatment_df <- within(treatment_df, {
 
 
 
-save(treatment_df, 
-     file = "Outputs/halodule-mgmt-results.rda")
+save(treatment_df, all_param_combos, 
+     file = "Outputs/zostera-mgmt-results.rda")
 
 
 # ------------ 

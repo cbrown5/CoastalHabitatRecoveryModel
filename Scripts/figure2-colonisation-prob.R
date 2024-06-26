@@ -49,7 +49,7 @@ g1 <- ggplot(subset(dat, Model == "Dispersal limited")) +
   xlab("Number of connected patches") +
   scale_x_continuous(breaks = seq(0, 10, by = 2))+
   theme_classic() +
-  scale_color_manual(values = c( "Darkblue", "Red"))+
+  scale_color_manual(values = c( "Darkblue", "Red")) +
   theme(legend.position = "none")
 g1
 
@@ -66,16 +66,17 @@ g2 <- ggplot(subset(dat, Model == "Recruitment limited")) +
   scale_x_continuous(breaks = seq(0, 10, by = 2))+
   theme_classic() +
   scale_color_manual(values = c( "Darkblue", "Red"))  +
-  theme(legend.position = c(0.8, 0.8))
+  theme(legend.position = c(0.6, 0.9))
 g2
 
 gboth <- g1 + g2 + 
   plot_annotation(tag_levels = "a",
                   tag_prefix = "(",
                   tag_suffix = ")")
+gboth
 ggsave("Outputs/colonisation prob.png", 
        gboth,
-       width = 6, height = 2.5)
+       width = 7, height = 3)
 
 
 
@@ -146,3 +147,44 @@ ggsave("Outputs/conceptual-fig-disp-recovery.png", g4,
 ggsave("Outputs/conceptual-fig-rec-recovery.png", g5,
        width = 3, height = 2)
 
+
+#
+# Probability vs biomass
+#
+
+x <- seq(0, 600, by = 1)
+
+# Dispersal limitation model
+y <- seeding_old_function(x = x, phi = 500, 
+                            l_max = 0.38, nu = 0.01) 
+
+plot(x,y, ylim = c(0, 0.4))
+
+seeding_old_function(
+                     x = 558*0.5, 
+                     # x = 667*0.2,
+                     phi = 500, 
+                     l_max = 0.38, nu = 0.01)
+
+# Recruitment limitation model
+
+phivals <- seq(1, 1000, by = 10)
+nuvals <- seq(0.005, 0.05, length.out = 500)
+vals <- expand.grid(phivals = phivals, nuvals = nuvals)
+vals$prob_bmax <- seeding_old_function(
+  x = 558, 
+  phi = vals$phivals, 
+  l_max = 0.38, nu = vals$nuvals)
+vals$prob_20 <- seeding_old_function(
+  x = 558*0.2, 
+  phi = vals$phivals, 
+  l_max = 0.38, nu = vals$nuvals)
+
+
+ggplot(vals) + 
+  aes(x = phivals, y = nuvals, fill = prob_bmax) + 
+  geom_raster()
+
+ggplot(vals) + 
+  aes(x = phivals, y = nuvals, fill = prob_20) + 
+  geom_raster()

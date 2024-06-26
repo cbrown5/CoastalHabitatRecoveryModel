@@ -1,27 +1,23 @@
 
-# Zostera analysis, sensitivity to recruitment/disp 
-# parameters
-#CJ Brown 2022-11-22
-
-#Sensitivity to lmax, nu and phi (AKA tau in the paper)
+# halodule analysis, mgmt simulations for Revision 1
+#CJ Brown 2024-02-16
 
 library(tidyverse)
+
 
 # source functions 
 source("Functions/Conversion_functions.R")
 source("Functions/Stochastic_dispersal_model.R")
 source("Functions/Stochastic_recruitment_model.R")
 source("Functions/Seeding_functions.R")
-source("Scripts/zostera_params.R")
+source("Scripts/halodule_params.R")
 
-# Specify experiment name HERE (and stress levels)
-temp_lev <- 30.3
 lhour <- function(x) x*1000/24 # Function to convert mol per day to mmol per hour
-
-light_lev <- lhour(5.2)
-
+# Specify experiment name HERE (and stress levels)
+temp_stress <- 34.5
+light_stress <- seq(1, 5.1, by = 0.1)
+  # c(2.6, 1.3)
 ######################## Set Parameters ##########################################
-
 
 SD_model_list <- list()
 SR_model_list <- list()
@@ -32,21 +28,27 @@ n_vect <- 2:11
  
 # Setup the stressor treatments
 # Choose light and temp levels plus name
-lhour <- function(x) x*1000/24 # Function to convert mol per day to mmol per hour
+temp_lev <- 30.3# c( "normal" = 30.3, "high" =  temp_stress) 
+light_lev <-lhour(c(5.2, light_stress)) #c("normal" = lhour(5.2), "low" = lhour(light_stress))
+templight <- expand.grid( T. = temp_lev, I. = light_lev)
 
-nu_lev <-  seq(zostera_param_set$nu/4,
-               zostera_param_set$nu*4,
-               by = zostera_param_set$nu/4)
-phi_lev <-  seq(zostera_param_set$phi/4,
-               zostera_param_set$phi*4,
-               by = zostera_param_set$phi/4)
-l_max_lev <-  seq(zostera_param_set$l_max/4,
-               0.99,
-               by = zostera_param_set$l_max/4)
+#change parameters to saturate recruitment and/or dispersal
+all_param_combos <- rbind(
+  data.frame(templight, 
+             phi = halodule_param_set$phi,
+             l_max = halodule_param_set$l_max),
+  data.frame(templight, 
+             phi = halodule_param_set$phi*1.5,
+             l_max = halodule_param_set$l_max),
+  #This represents recruit/settlement saturation (ie restoration interventions, 
+  # with type of intervention depending on which model we are looking at): 
+  data.frame(templight, 
+             #phi: biomass at which recruit probability is half Lmax (called tau in the paper)
+            phi = 20,
+             l_max = 0.999)
+  )
 
-all_param_combos <- expand.grid(nu = nu_lev, 
-                                phi = phi_lev,
-                                l_max = l_max_lev)
+
 
 # For each number of nodes
 for (i in seq_along(n_vect)){
@@ -60,7 +62,7 @@ for (i in seq_along(n_vect)){
   Q[, 1] <- 1
   Q[1,1] <- 0
 
-  this_param_set <- within(zostera_param_set, {
+  this_param_set <- within(halodule_param_set, {
     
     n <- n
     B_init <-  c(0, rep(667, n-1))
@@ -77,11 +79,10 @@ for (i in seq_along(n_vect)){
     
     # Update the parameters
     temp_params <- this_param_set
-    temp_params[["nu"]] <- as.vector(this_combo$nu)
     temp_params[["phi"]] <- as.vector(this_combo$phi)
     temp_params[["l_max"]] <- as.vector(this_combo$l_max)
-    temp_params[["T."]] <- temp_lev
-    temp_params[["I."]] <- light_lev
+    temp_params[["T."]] <- as.vector(this_combo$T.)
+    temp_params[["I."]] <- as.vector(this_combo$I.)
     
     # Start source patches at equilibrium
     temp_params[["B_init"]] <- Find_B_star(params = temp_params, 
@@ -155,7 +156,38 @@ treatment_df <- within(treatment_df, {
 
 
 
-save(treatment_df, 
-     file = "Outputs/zostera-recruit-function-sensitivity.rda")
+save(treatment_df, all_param_combos, 
+     file = "Outputs/halodule-mgmt-results.rda")
 
+
+# ------------ 
+# PLOTS 
+# ------------ 
+
+
+#
+# Figure 3, just two models 
+#
+
+# ggplot(filter(treatment_df, I. == templight$I.[1])) + 
+  ggplot(treatment_df) +
+  aes(x = n_sources, y = median_recovery/365, colour = T.,
+      shape = model, fill = I.) +
+  geom_hline(yintercept = 0) +
+  theme_classic()+
+  geom_line(position = position_dodge(width = 0.6), alpha = 0.5) + 
+  geom_point(aes(shape = model), position = position_dodge(width = 0.6))  +
+  geom_linerange(mapping = aes(ymin = per25/365, ymax = per75/365), 
+                 position = position_dodge(width = 0.6), size = 1, alpha = 0.5) +
+  geom_linerange(mapping = aes(ymin = per5/365, ymax = per95/365), 
+                 position = position_dodge(width = 0.6), alpha = 0.5) +
+  scale_shape_manual(values = c(1,2)) + 
+  xlab("Number of source patches") + 
+  ylab("Recovery time (years)") + 
+  scale_x_continuous(breaks = 1:10) +
+  facet_grid(phi ~ l_max, scales = "free") + 
+  theme(axis.text = element_text(size = 11), 
+        axis.title = element_text(size = 13),
+        legend.text = element_text(size = 10)
+  )
 

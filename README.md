@@ -1,31 +1,83 @@
 # Coastal habitat recovery models
 
-Code to support the manuscript: "Speeding up the recovery of coastal habitats through management interventions that address constraints on dispersal and recruitment"
+R code to support the manuscript: "Speeding up the recovery of coastal habitats through management interventions that address constraints on dispersal and recruitment"
 
-Christopher J. Brown1,2, Max D. Campbell2, Catherine J. Collier3, Mischa P. Turschwell2, Megan I. Saunders4, Rod M. Connolly2
+Christopher J. Brown, Max D. Campbell, Catherine J. Collier, Mischa P. Turschwell, Megan I. Saunders, Rod M. Connolly
 
-Code Developers: Max Campbell, Dr Chris Brown
+Code Developers: Dr Chris Brown, Max Campbell
 
-# Title: Connectivity facilitates restoration of foundation habitats in the presence of multiple stressors
+2024-06-26
 
-## Summary
+### Recommended citation: 
 
-Habitat restoration plans would benefit from predictions of timescales for recovery. Theoretical models have been a powerful tool for informing practical guidelines in planning marine protected areas, suggesting restoration planning could also benefit from a theoretical framework. We developed a model that can predict recovery times following restoration action, under dispersal, connectivity and recruitment constraints. We apply the model to a case-study of seagrass restoration and find recovery times following restoration action can vary greatly, from <1 to >20 years. The model also shows how recovery can be accelerated when restoration actions are matched to the constraints on recovery. For example, spreading propagules can be used when connectivity is restricted. The recovery constraints we articulated mathematically also apply to the restoration of coral reefs, mangroves, saltmarsh, shellfish reefs and macroalgal forests, so our model provides a general framework for choosing restoration actions that accelerate coastal habitat recovery. 
+It is recommended you look up the peer-reviewed study by the same title and cite that. 
+
+Brown, Campbell, 2024. R code to support the manuscript: "Speeding up the recovery of coastal habitats through management interventions that address constraints on dispersal and recruitment"
 
 
 ## How to navigate the code
 
 The code is is two locations "Scripts" and "Functions", where the user should always work from the "Scripts" folder and these scripts source the functions they need to run the desired analysis.  The number prefixes indicate the logical order you should run the self contained scripts in.
 
+
+## Overview and Aims
+
+Create a model that can predict recovery time of coastal habitats under ecological constraints on dispersal, management and connectivity to propagule sources. Investigate the influence of management efforts on reducing recovery time. 
+
+## Data sources
+
+No data was used in this study. Model parameters are taken from the literature and are descriped in the peer-reviewed study. 
+
 ### Scripts/
 
-**halodule-simulations.R** and **zostera-simulations.R** - evaluate the models and creates a file with all model output for plotting
+All code was written in R with version 4.4.0. The R packages `tidyverse`, `patchwork` and `plotly` are used for plotting and data wrangling. 
 
-**halodule-simulations-sensitivity.R** and **zostera-simulations-sensitivity.R** - as above, but also runs models for different parameter settings to create sensitivity analysis in the supplemental files. 
+**zostera-params.R**  **halodule-params.R** 
 
-**zostera-params.R** and **halodule-params.R** Zostera and halodule parameter settings.
+Zostera and Halodule parameter settings.
 
-Other scripts create the figures in the manuscript as per their labels. 
+**halodule-simulations.R**  **zostera-simulations.R** 
+
+Evaluate the models and creates a file with all model output for plotting
+
+**zostera-simulations-sensitivity.R**
+ 
+As above, but also runs models for different parameter settings to create sensitivity analysis in the supplemental files. 
+
+**zostera-simulations-mgmt-v2.R** **halodule-simulations-mgmt-v2**
+
+Runs Zostera or Halodule model with management scenarios, input to create fig 5. 
+
+**zostera-simulations-mgmt-phi-sens.R** 
+
+Tests sensitivity of management benefits (time saved) to the parameter phi. For supplementary figures. 
+
+**zostera-simulations-light-sensitivity.R** **halodule-simulations-light-sensitivity.R**
+
+Sensitivity analysis of Zostera and Halodule to different stressor scenarios. Not used in final revised ms, but kept here for future use. 
+
+**figure2-colonisation-prob.R** 
+
+Figure of colonisation probability for the dispersal and recruitment models. 
+
+**figure3-connections.R**
+
+Figure of recovery time under different levels of connectivity. 
+
+**figure4-connections-stressors.R**
+
+Figure of recovery time under different levels of connectivity and stressors.
+
+**figure5-mgmt-comparisons-v2.R**
+
+Figure of recovery time under different management scenarios and light levels. 
+
+**figure-param-sensitivity.R**
+
+Creates figure for supp with the sensitivity of recovery time to key parameters. 
+**figure-mgmt-comparisons-phisens-v2.R** 
+
+Creates figure for supp with the sensitivity of management benefits to phi.
 
 
 ### Functions/
