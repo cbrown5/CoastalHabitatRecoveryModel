@@ -4,15 +4,18 @@ R code to support the manuscript: "Speeding up the recovery of coastal habitats 
 
 Christopher J. Brown, Max D. Campbell, Catherine J. Collier, Mischa P. Turschwell, Megan I. Saunders, Rod M. Connolly
 
+[Published: Proceedings of the Royal Society B. 2024 Jul 24;291(2027):20241065.](https://doi.org/10.1098/rspb.2024.1065) DOI: 10.1098/rspb.2024.1065
+
 Code Developers: Dr Chris Brown, Max Campbell
 
 2024-06-26
 
 ### Recommended citation: 
 
-It is recommended you look up the peer-reviewed study by the same title and cite that. 
+It is recommended you [cite the peer-reviewed study](https://doi.org/10.1098/rspb.2024.1065) 
 
-Brown, Campbell, 2024. R code to support the manuscript: "Speeding up the recovery of coastal habitats through management interventions that address constraints on dispersal and recruitment" Zenodo. DOI: 10.5281/zenodo.12541372
+
+The version of code used in the paper is archived on Zenodo: Brown, Campbell, 2024. R code to support the manuscript: "Speeding up the recovery of coastal habitats through management interventions that address constraints on dispersal and recruitment" Zenodo. DOI: 10.5281/zenodo.12541372
 
 [![DOI](https://zenodo.org/badge/712717461.svg)](https://zenodo.org/doi/10.5281/zenodo.12541371)
 
